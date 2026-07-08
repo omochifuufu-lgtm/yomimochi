@@ -13,7 +13,7 @@ window.YOMI_CONFIG = {
     enabled: true,
     // アソシエイトの トラッキングID（例: 'yomimochi-22'）。
     // 空のままでも 購入リンクは出ますが、収益は つきません。
-    tag: '',
+    tag: 'omochi-twitter-22',
     domain: 'www.amazon.co.jp'
   }
 };
