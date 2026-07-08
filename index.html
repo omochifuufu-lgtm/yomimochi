@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#ffb703" />
+  <title>よみもち — こどもの どくしょきろく</title>
+  <meta name="description" content="本のバーコードをスキャンして、読み聞かせを記録。きょうだいごとに本棚をつくれて、ごほうびスタンプも集まる。親子で使える子ども向け読書記録アプリ。" />
+
+  <!-- SNS リンクプレビュー（OGP / Twitter Card） -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="よみもち — こどもの どくしょきろく" />
+  <meta property="og:description" content="本をスキャンして読み聞かせを記録。ごほうびスタンプで「もっと読みたい！」を応援する、親子の読書記録アプリ。" />
+  <meta property="og:image" content="ogp.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="よみもち — こどもの どくしょきろく" />
+  <meta name="twitter:description" content="本をスキャンして読み聞かせを記録。ごほうびスタンプで読書をたのしく。" />
+  <meta name="twitter:image" content="ogp.png" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- ヘッダー -->
+    <header class="topbar">
+      <button class="logo" data-nav="home">📚 よみもち</button>
+      <button class="who" id="who-btn"><span id="who-avatar">🐱</span><span id="who-name">わたし</span><span class="who-caret">▾</span></button>
+    </header>
+
+    <!-- ===== ホーム（ダッシュボード） ===== -->
+    <section class="page" id="page-home">
+      <div class="mascot-row">
+        <span class="mochi bounce" data-mood="happy" data-size="118"></span>
+        <div class="bubble" id="mascot-bubble">いっしょに ほんを よもう！</div>
+      </div>
+
+      <div class="hero">
+        <div class="hero-text">
+          <div class="hero-count" id="lifetime-count">0</div>
+          <div class="hero-label">いままで よんだ かず</div>
+        </div>
+      </div>
+
+      <div class="goal-card" id="goal-card">
+        <!-- JSで描画 -->
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-num" id="stat-today">0</div><div class="stat-lbl">きょう</div></div>
+        <div class="stat"><div class="stat-num" id="stat-week">0</div><div class="stat-lbl">こんしゅう</div></div>
+        <div class="stat"><div class="stat-num" id="stat-year">0</div><div class="stat-lbl">ことし</div></div>
+        <div class="stat"><div class="stat-num" id="stat-books">0</div><div class="stat-lbl">ほんの かず</div></div>
+      </div>
+
+      <button class="big-btn scan" data-nav="scan">📷 ほんを スキャンする</button>
+
+      <h2 class="section-title">さいきん よんだ ほん</h2>
+      <div id="recent-list" class="book-strip"></div>
+    </section>
+
+    <!-- ===== スキャン ===== -->
+    <section class="page hidden" id="page-scan">
+      <h2 class="section-title">📷 バーコードを よみとろう</h2>
+      <div class="mascot-row small">
+        <span class="mochi" data-mood="happy" data-size="72"></span>
+        <div class="bubble">ほんの うらの バーコード（978で はじまる）を わくに あわせてね！</div>
+      </div>
+      <div class="scanner">
+        <video id="cam" playsinline muted></video>
+        <div class="scan-frame"></div>
+      </div>
+      <div id="scan-status" class="scan-status">カメラを じゅんびちゅう…</div>
+
+      <div class="manual">
+        <p class="hint">カメラが つかえない ときは すうじで にゅうりょく</p>
+        <div class="row">
+          <input id="isbn-input" inputmode="numeric" placeholder="ISBN（13けた）" />
+          <button class="mini-btn" id="isbn-go">さがす</button>
+        </div>
+        <div class="row">
+          <input id="title-input" placeholder="ほんの なまえで さがす" />
+          <button class="mini-btn" id="title-go">さがす</button>
+        </div>
+        <div id="search-results"></div>
+      </div>
+      <button class="ghost-btn" data-nav="home">← もどる</button>
+    </section>
+
+    <!-- ===== ライブラリ ===== -->
+    <section class="page hidden" id="page-library">
+      <h2 class="section-title">📖 ぼくとわたしの ほんだな</h2>
+      <div class="sort-row">
+        <button class="chip active" data-sort="recent">さいきん</button>
+        <button class="chip" data-sort="count">よんだ かいすう</button>
+        <button class="chip" data-sort="title">なまえ</button>
+      </div>
+      <div id="library-grid" class="book-grid"></div>
+      <button class="ghost-btn" data-nav="home">← もどる</button>
+    </section>
+
+    <!-- ===== 本の詳細 ===== -->
+    <section class="page hidden" id="page-book">
+      <div id="book-detail"></div>
+      <button class="ghost-btn" data-nav="library">← ほんだなへ</button>
+    </section>
+
+    <!-- ===== 目標設定 ===== -->
+    <section class="page hidden" id="page-goal">
+      <h2 class="section-title">🎯 もくひょうを きめよう</h2>
+      <div class="goal-form">
+        <label>きかん</label>
+        <div class="seg" id="goal-period">
+          <button data-period="week">1しゅうかん</button>
+          <button data-period="month">1かげつ</button>
+          <button data-period="year" class="active">1ねん</button>
+        </div>
+        <label>なんさつ よむ？</label>
+        <div class="row">
+          <button class="step" id="goal-minus">−</button>
+          <input id="goal-target" type="number" value="50" min="1" />
+          <button class="step" id="goal-plus">＋</button>
+        </div>
+        <button class="big-btn save" id="goal-save">この もくひょうに する</button>
+      </div>
+      <button class="ghost-btn" data-nav="home">← もどる</button>
+    </section>
+
+    <!-- ===== スタンプ帳 ===== -->
+    <section class="page hidden" id="page-stamps">
+      <h2 class="section-title">🏅 ごほうび スタンプちょう</h2>
+      <p class="hint" id="stamp-progress"></p>
+      <div id="stamp-grid" class="stamp-grid"></div>
+      <button class="ghost-btn" data-nav="home">← もどる</button>
+    </section>
+
+    <!-- ===== おうちの人へ（保護者向け・収益導線） ===== -->
+    <section class="page hidden" id="page-parent">
+      <h2 class="section-title">👨‍👩‍👧 おうちの人へ</h2>
+      <div class="mascot-row small">
+        <span class="mochi" data-mood="happy" data-size="72"></span>
+        <div class="bubble">いつも よみきかせ ありがとう！</div>
+      </div>
+
+      <div class="parent-card" id="rebuy-card">
+        <h3 class="pc-h">💖 よく読んでいる本・シリーズ</h3>
+        <p class="pc-p">お子さんのお気に入りです。プレゼントや買い足しの参考にどうぞ。</p>
+        <div id="rebuy-list"></div>
+      </div>
+
+      <div class="parent-card">
+        <h3 class="pc-h">📣 このアプリを ひろめる</h3>
+        <p class="pc-p">お子さんの「読んだ冊数」を、ともだちや家族にシェアできます。よかったら広めてください。</p>
+        <div class="share-now" id="share-summary"></div>
+        <button class="big-btn save" id="share-native">📲 シェアする</button>
+        <div class="share-buttons">
+          <button class="share-btn line" data-share="line">LINE</button>
+          <button class="share-btn x" data-share="x">X (Twitter)</button>
+          <button class="share-btn copy" data-share="copy">リンクをコピー</button>
+        </div>
+      </div>
+
+      <div class="parent-card" id="amazon-card">
+        <h3 class="pc-h">📚 本をさがす・かう</h3>
+        <p class="pc-p">記録した本は、それぞれの本のページから購入リンクを開けます。新しい絵本をさがすときはこちら。</p>
+        <button class="big-btn list" id="browse-amazon">🛒 えほんを Amazon でさがす</button>
+        <p class="affiliate-note" id="affiliate-note"></p>
+      </div>
+
+      <button class="ghost-btn" id="settings-btn">⚙️ せってい・バックアップ</button>
+      <button class="ghost-btn" data-nav="home">← もどる</button>
+    </section>
+  </div>
+
+  <!-- 下部タブバー -->
+  <nav class="tabbar">
+    <button class="tab active" data-nav="home"><span class="ti">🏠</span><span class="tl">ホーム</span></button>
+    <button class="tab" data-nav="library"><span class="ti">📖</span><span class="tl">ほんだな</span></button>
+    <button class="tab fab" data-nav="scan" aria-label="スキャン"><span class="ti">📷</span></button>
+    <button class="tab" data-nav="stamps"><span class="ti">🏅</span><span class="tl">スタンプ</span><span id="stamp-pill"></span></button>
+    <button class="tab" data-nav="parent"><span class="ti">👨‍👩‍👧</span><span class="tl">おうちの人</span></button>
+  </nav>
+
+  <!-- 感想モーダル -->
+  <div class="modal hidden" id="memo-modal">
+    <div class="modal-card">
+      <h3>かんそうを かこう ✏️</h3>
+      <div class="memo-tabs">
+        <button class="memo-tab active" data-memo="draw">てがき</button>
+        <button class="memo-tab" data-memo="voice">こえ</button>
+        <button class="memo-tab" data-memo="text">もじ</button>
+      </div>
+
+      <div class="memo-pane" id="pane-draw">
+        <div class="draw-tools">
+          <button class="pen-color active" style="--c:#222" data-color="#222"></button>
+          <button class="pen-color" style="--c:#e63946" data-color="#e63946"></button>
+          <button class="pen-color" style="--c:#1d8a4e" data-color="#1d8a4e"></button>
+          <button class="pen-color" style="--c:#1d6fe6" data-color="#1d6fe6"></button>
+          <button class="pen-color" style="--c:#f4a300" data-color="#f4a300"></button>
+          <button class="mini-btn" id="draw-clear">けす</button>
+        </div>
+        <canvas id="draw-canvas" width="600" height="380"></canvas>
+      </div>
+
+      <div class="memo-pane hidden" id="pane-voice">
+        <button class="rec-btn" id="rec-btn">🎤 おして はなす</button>
+        <div id="voice-text" class="voice-text">ここに こえが もじに なるよ</div>
+      </div>
+
+      <div class="memo-pane hidden" id="pane-text">
+        <textarea id="text-memo" placeholder="どんな おはなし だった？"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="ghost-btn" id="memo-cancel">やめる</button>
+        <button class="big-btn save" id="memo-save">ほぞん</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- だれの きろく？ モーダル -->
+  <div class="modal hidden" id="profile-modal">
+    <div class="modal-card">
+      <h3>だれの きろく？ 👦👧</h3>
+      <div id="profile-list" class="profile-list"></div>
+      <hr class="soft-hr" />
+      <h3 style="font-size:1rem">あたらしい おともだちを ついか</h3>
+      <input id="new-name" class="name-input" placeholder="なまえ（れい：はなこ）" maxlength="10" />
+      <div id="avatar-grid" class="avatar-grid"></div>
+      <div class="modal-actions">
+        <button class="ghost-btn" id="profile-close">とじる</button>
+        <button class="big-btn save" id="profile-add">＋ ついか</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- せってい・バックアップ モーダル -->
+  <div class="modal hidden" id="settings-modal">
+    <div class="modal-card">
+      <h3>⚙️ せってい・バックアップ</h3>
+      <p class="hint" id="backup-summary"></p>
+
+      <button class="big-btn save" id="export-btn">📤 バックアップを ほぞん</button>
+      <p class="hint">いまの きろく（ぜんいんぶん）を ファイルに かきだします。スマホや パソコンに とっておけます。</p>
+
+      <hr class="soft-hr" />
+
+      <button class="big-btn list" id="import-btn">📥 バックアップから もどす</button>
+      <p class="hint">ほぞんした ファイルを えらぶと、その ときの きろくに もどせます。<br><b>いまの きろくは うわがきされます。</b></p>
+      <input type="file" id="import-file" accept="application/json,.json" hidden />
+
+      <div class="modal-actions">
+        <button class="ghost-btn" id="settings-close">とじる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- スタンプ ゲット お祝い -->
+  <div class="modal hidden" id="stamp-modal">
+    <div class="modal-card stamp-celebrate">
+      <div class="spark">✨🎉✨</div>
+      <div class="celebrate-duo">
+        <span class="mochi" data-mood="wow" data-size="96"></span>
+        <div class="big-stamp" id="celebrate-emoji">🏅</div>
+      </div>
+      <div class="celebrate-h">スタンプ ゲット！</div>
+      <div id="celebrate-sub" class="celebrate-sub"></div>
+      <button class="big-btn save" id="celebrate-ok">やったー！</button>
+      <button class="ghost-btn" id="celebrate-share">📲 がんばりを シェア</button>
+    </div>
+  </div>
+
+  <!-- お祝いトースト -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
