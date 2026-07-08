@@ -6,7 +6,7 @@ window.YOMI_CONFIG = {
 
   // デプロイ後の こうかいURL（SNSシェアや リンクプレビューに つかう）
   // 例: 'https://yourname.github.io/yomimochi/'
-  appUrl: '',
+  appUrl: 'https://omochifuufu-lgtm.github.io/yomimochi/',
 
   // Amazon アソシエイト
   amazon: {
