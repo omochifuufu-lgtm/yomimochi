@@ -217,8 +217,9 @@ const lastSession  = (b) => Math.max(0, ...(b.sessions||[]).map(s => +new Date(s
 const firstSession = (b) => Math.min(...(b.sessions||[]).map(s => +new Date(s)));
 
 function bookCardHTML(b) {
-  const cover = b.cover
-    ? `<img class="cover" src="${b.cover}" alt="">`
+  const src = safeSrc(b.cover);
+  const cover = src
+    ? `<img class="cover" src="${src}" alt="">`
     : `<div class="cover">📕</div>`;
   const n = (b.sessions||[]).length;
   return `<div class="book-card" data-book="${b.id}">
@@ -256,11 +257,12 @@ function openBook(id) {
   const b = P().books.find(x => x.id === id);
   if (!b) return;
   const n = (b.sessions||[]).length;
-  const cover = b.cover ? `<img class="bd-cover" src="${b.cover}">` : `<div class="bd-cover">📕</div>`;
+  const coverSrc = safeSrc(b.cover);
+  const cover = coverSrc ? `<img class="bd-cover" src="${coverSrc}">` : `<div class="bd-cover">📕</div>`;
   const dates = n ? `はじめて よんだ日： ${fmtDate(firstSession(b))}<br>さいきん よんだ日： ${fmtDate(lastSession(b))}` : 'まだ よんでいないよ';
   const memos = (b.memos||[]).slice().reverse().map(m => {
     let body = '';
-    if (m.type === 'draw')  body = `<img src="${m.content}">`;
+    if (m.type === 'draw')  body = `<img src="${safeSrc(m.content)}">`;
     if (m.type === 'voice' || m.type === 'text') body = esc(m.content);
     const icon = { draw:'✏️', voice:'🎤', text:'📝' }[m.type];
     return `<div class="memo-item"><div class="when">${icon} ${fmtDate(m.date)}</div>${body}</div>`;
@@ -284,6 +286,7 @@ function openBook(id) {
     ${amazonEnabled() ? `<div class="parent-links">
       <a class="parent-link" id="buy-link">🛒 この本を かう <small>（おうちの人むけ）</small></a>
       ${b.authors ? `<a class="parent-link" id="author-link">✍️ この さくしゃの ほかの本</a>` : ''}
+      <p class="affiliate-note">【PR】リンクはAmazonアソシエイトです</p>
     </div>` : ''}
     <h2 class="section-title">きろくした かんそう</h2>
     <div class="memo-list">${memos || '<div class="empty">まだ かんそうが ないよ</div>'}</div>
@@ -588,6 +591,11 @@ document.getElementById('goal-save').onclick = () => {
 
 /* ============ ユーティリティ ============ */
 function esc(s) { return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+// 外部由来のURLを src 属性に入れる前の無害化（https と data:image のみ許可。バックアップ取込やAPI応答の細工対策）
+function safeSrc(u) {
+  u = String(u || '');
+  return (u.startsWith('https://') || u.startsWith('data:image/')) ? esc(u) : '';
+}
 let toastTimer;
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -828,7 +836,7 @@ function renderParent() {
     `${p.avatar} <b>${esc(p.name)}</b>は いままで <b>${reads}</b>さつ よみました！`;
   document.getElementById('amazon-card').style.display = amazonEnabled() ? '' : 'none';
   document.getElementById('affiliate-note').textContent =
-    '※当アプリはAmazonアソシエイト・プログラムの参加者です。リンクから購入されると収益が発生する場合があります。';
+    '【PR】Amazonのアソシエイトとして、よみもちは適格販売により収入を得ています。';
 
   // よく読んでいる本（回数トップ3）→ 買い足し導線
   const card = document.getElementById('rebuy-card');
@@ -841,7 +849,7 @@ function renderParent() {
     card.style.display = '';
     document.getElementById('rebuy-list').innerHTML = top.map((b, i) => `
       <div class="rebuy-item">
-        ${b.cover ? `<img src="${b.cover}" alt="">` : '<div class="rb-ph">📕</div>'}
+        ${safeSrc(b.cover) ? `<img src="${safeSrc(b.cover)}" alt="">` : '<div class="rb-ph">📕</div>'}
         <div class="rb-info">
           <div class="rb-t">${esc(b.title)}</div>
           <div class="rb-c">${b.sessions.length}かい よんでいます</div>
