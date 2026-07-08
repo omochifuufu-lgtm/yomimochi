@@ -8,6 +8,10 @@ window.YOMI_CONFIG = {
   // 例: 'https://yourname.github.io/yomimochi/'
   appUrl: 'https://omochifuufu-lgtm.github.io/yomimochi/',
 
+  // Google Books APIキー（タイトルけんさくを あんていさせる）。
+  // リファラ制限ずみ: このサイト以外からは つかえないので 公開してOK。
+  googleBooksKey: 'AIzaSyDtoXRNY3kqLuWoETDe1oues__y5JV_WUg',
+
   // Amazon アソシエイト
   amazon: {
     enabled: true,

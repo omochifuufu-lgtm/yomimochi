@@ -466,6 +466,12 @@ function stopScanner() {
 }
 
 /* ============ 本の情報を取得 ============ */
+// Google Books は config.js のAPIキーを付けて呼ぶ（キーなし共有枠はクォータ枯渇で不安定）
+function gbKey() {
+  const k = window.YOMI_CONFIG && YOMI_CONFIG.googleBooksKey;
+  return k ? '&key=' + encodeURIComponent(k) : '';
+}
+
 // openBD (日本の書籍, 無料, APIキー不要) → Google Books フォールバック
 async function lookupISBN(isbn) {
   isbn = isbn.replace(/[^0-9X]/gi, '');
@@ -488,7 +494,7 @@ async function lookupISBN(isbn) {
   } catch (e) { console.warn(e); }
   // フォールバック
   try {
-    const r = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn);
+    const r = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn + gbKey());
     const data = await r.json();
     if (data.items && data.items[0]) return addBook(fromGoogle(data.items[0], isbn));
   } catch (e) {}
@@ -531,8 +537,9 @@ async function searchByTitle() {
   const box = document.getElementById('search-results');
   box.innerHTML = '<div class="hint">さがしています…</div>';
   try {
-    const r = await fetch('https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=8&langRestrict=ja');
+    const r = await fetch('https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=8&langRestrict=ja' + gbKey());
     const data = await r.json();
+    if (data.error) { box.innerHTML = '<div class="hint">こんでいるみたい… すこし まってから もういちど ためしてね</div>'; return; }
     if (!data.items) { box.innerHTML = '<div class="hint">みつかりませんでした</div>'; return; }
     box.innerHTML = data.items.map((it, i) => {
       const v = it.volumeInfo || {};
