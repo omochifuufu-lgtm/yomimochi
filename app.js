@@ -435,8 +435,14 @@ async function startScanner() {
   const status = document.getElementById('scan-status');
   const video = document.getElementById('cam');
   document.getElementById('search-results').innerHTML = '';
+  // iPhone等のバーコード非対応ブラウザでは、読み取れないカメラを出さず名前検索へ誘導する
   if (!('BarcodeDetector' in window)) {
-    status.textContent = 'この ブラウザは じどう よみとり ひたいおう。すうじ にゅうりょくを つかってね';
+    document.querySelector('#page-scan .scanner').classList.add('hidden');
+    document.querySelector('#page-scan .section-title').textContent = '🔍 ほんを さがそう';
+    document.querySelector('#page-scan .bubble').textContent = 'この スマホは カメラよみとりが つかえないの。ほんの なまえで さがしてね！';
+    document.querySelector('#page-scan .manual > .hint').classList.add('hidden');
+    status.textContent = '👇 ほんの なまえか、うらの すうじ（978で はじまる）で さがせるよ';
+    return;
   }
   try {
     scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
